@@ -6,12 +6,12 @@ def call(Map config) {
 
         withCredentials([string(credentialsId: config.credentialsId, variable: 'QASE_TOKEN')]) {
             echo '1. Creating a new Test Run...'
-            bat """
-                curl -s -X POST "https://api.qase.io/v1/run/${config.projectCode}" ^
-                -H "accept: application/json" ^
-                -H "Content-Type: application/json" ^
-                -H "Token: %QASE_TOKEN%" ^
-                -d "{\\"title\\":\\"${env.JOB_NAME} - Build ${env.BUILD_NUMBER}\\", \\"cases\\":${config.testCaseIds}}" ^
+            sh """
+                curl -s -X POST "https://api.qase.io/v1/run/${config.projectCode}" \\
+                -H "accept: application/json" \\
+                -H "Content-Type: application/json" \\
+                -H "Token: \$QASE_TOKEN" \\
+                -d '{\"title\":\"${env.JOB_NAME} - Build ${env.BUILD_NUMBER}\", \"cases\":${config.testCaseIds}}' \\
                 -o response.json
             """
 
@@ -22,19 +22,19 @@ def call(Map config) {
                 echo "✅ Qase Test Run ID: ${runId}"
 
                 echo "2. Uploading results to Qase..."
-                bat """
-                    curl -s -X PATCH "https://api.qase.io/v1/result/${config.projectCode}/${runId}/testng" ^
-                    -H "accept: application/json" ^
-                    -H "Content-Type: multipart/form-data" ^
-                    -H "Token: %QASE_TOKEN%" ^
+                sh """
+                    curl -s -X PATCH "https://api.qase.io/v1/result/${config.projectCode}/${runId}/testng" \\
+                    -H "accept: application/json" \\
+                    -H "Content-Type: multipart/form-data" \\
+                    -H "Token: \$QASE_TOKEN" \\
                     -F "file=@target/surefire-reports/testng-results.xml"
                 """
 
                 echo "3. Marking Qase run as complete..."
-                bat """
-                    curl -s -X POST "https://api.qase.io/v1/run/${config.projectCode}/${runId}/complete" ^
-                    -H "accept: application/json" ^
-                    -H "Token: %QASE_TOKEN%"
+                sh """
+                    curl -s -X POST "https://api.qase.io/v1/run/${config.projectCode}/${runId}/complete" \\
+                    -H "accept: application/json" \\
+                    -H "Token: \$QASE_TOKEN"
                 """
 
                 echo "✅ Qase integration complete."
