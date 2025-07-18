@@ -1,5 +1,10 @@
 def call(Map config) {
-    def suiteName = config.suiteName ?: 'regression'
+    // No default fallback; force suiteName to be passed explicitly
+    if (!config.suiteName) {
+        error "❌ suiteName is required in sendBuildSummaryEmail.groovy"
+    }
+
+    def suiteName = config.suiteName
     def summaryFile = "reports/${suiteName}-failure-summary.txt"
     def failureSummary = fileExists(summaryFile) ? readFile(summaryFile).trim() : ""
     def reportURL = "${env.BUILD_URL}Cumulative-Dashboard/"
@@ -27,7 +32,8 @@ def call(Map config) {
             body: body,
             to: RECIPIENT_EMAILS,
             mimeType: 'text/html',
-            attachmentsPattern: "reports/${suiteName}-report.html"
+            // In dynamic setups you can also use **/index.html
+            attachmentsPattern: "reports/**/index.html"
         )
     }
 }
