@@ -1,12 +1,31 @@
 def call(String suiteName, String buildNumber) {
     def summaryFile = "reports/${suiteName}-failure-summary.txt"
-    def hasFailures = fileExists(summaryFile) && readFile(summaryFile).trim().toLowerCase().contains("failed")
+    def summaryExists = fileExists(summaryFile)
+    def hasFailures = summaryExists && readFile(summaryFile).trim().toLowerCase().contains("failed")
 
-    def failureSummary = hasFailures ? readFile(summaryFile).trim() : "✅ All tests passed."
-    def failureHeader = hasFailures ? "❌ Failure Summary" : "✅ Test Result Summary"
-    def failureBoxColor = hasFailures ? "#fff3f3" : "#f3fff3"
-    def failureBorderColor = hasFailures ? "#f44336" : "#4CAF50"
-    def failureTextColor = hasFailures ? "#c62828" : "#2e7d32"
+    def reportChromeExists = fileExists("reports/chrome/index.html")
+    def reportFirefoxExists = fileExists("reports/firefox/index.html")
+
+    def failureSummary = "✅ All tests passed."
+    def failureHeader = "✅ Test Result Summary"
+    def failureBoxColor = "#f3fff3"
+    def failureBorderColor = "#4CAF50"
+    def failureTextColor = "#2e7d32"
+
+    if (!reportChromeExists || !reportFirefoxExists) {
+        hasFailures = true
+        failureSummary = "❌ Reports not generated. Possible test or post-build failure."
+        failureHeader = "⚠️ Report Generation Failed"
+        failureBoxColor = "#fff3f3"
+        failureBorderColor = "#f44336"
+        failureTextColor = "#c62828"
+    } else if (hasFailures) {
+        failureSummary = readFile(summaryFile).trim()
+        failureHeader = "❌ Failure Summary"
+        failureBoxColor = "#fff3f3"
+        failureBorderColor = "#f44336"
+        failureTextColor = "#c62828"
+    }
 
     def html = """
         <!DOCTYPE html>
