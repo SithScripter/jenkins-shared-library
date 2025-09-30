@@ -3,7 +3,7 @@ def call() {
     archiveArtifacts artifacts: 'logs/**', allowEmptyArchive: true
 
     publishHTML([
-        reportName: 'Cumulative Dashboard',
+        reportName: 'Test Dashboard',
         reportDir: 'reports',
         reportFiles: 'index.html',
         keepAll: true, alwaysLinkToLastBuild: true, allowMissing: false
