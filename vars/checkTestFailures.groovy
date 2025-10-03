@@ -37,7 +37,7 @@ def call() {
 
         echo "🔍 Debug: Total failures detected: ${failureCount}"
 
-        return failureCount > 0 ? 1 : 0
+        return failureCount
 
     } catch (Exception e) {
         echo "⚠️ Warning: Could not parse test results: ${e.getMessage()}"
