@@ -1,4 +1,4 @@
-def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5) {
+def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5, String hubUrl = 'http://localhost:4444/wd/hub') {
     try {
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
@@ -13,7 +13,6 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
 
         def gridReady = false
         def elapsedSeconds = 0
-        def hubUrl = "http://localhost:4444/wd/hub"
 
         while (!gridReady && elapsedSeconds < maxWaitSeconds) {
             try {
