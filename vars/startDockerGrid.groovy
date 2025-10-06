@@ -42,7 +42,9 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                         returnStdout: true
                     ).trim()  // Add .trim() to handle whitespace issues
 
-                    if (statusResponse.contains('"ready":true')) {
+                    // Parse JSON response to check readiness
+                    def jsonResponse = readJSON text: statusResponse
+                    if (jsonResponse.value?.ready == true) {
                         gridReady = true
                         echo "✅ Selenium Grid is ready and accepting connections!"
                         break
