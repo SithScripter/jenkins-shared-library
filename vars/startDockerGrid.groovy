@@ -9,8 +9,10 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
-        // Get the current container ID and connect it to the selenium_grid_network
+        // Get the current container ID and connect it to the selenium_grid_network created by Docker Compose
         def containerId = sh(script: 'hostname', returnStdout: true).trim()
+        // Wait a moment for Docker Compose to fully create the network
+        sleep time: 3, unit: 'SECONDS'
         sh "docker network connect selenium_grid_network ${containerId} || true"
 
         echo "🔍 Performing intelligent Grid health checks..."
