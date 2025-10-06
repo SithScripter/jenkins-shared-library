@@ -13,10 +13,10 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         def containerId = env.DOCKER_CONTAINER_ID ?: sh(script: 'hostname', returnStdout: true).trim()
         
         if (containerId) {
-            // Use 'docker network connect --force' to force reconnection, preventing the retry failure
+            // Connect to network (no flags needed - handle already connected with || true)
             // The sleep remains for the network to initialize
             sleep time: 3, unit: 'SECONDS'
-            sh "docker network connect --force selenium_grid_network ${containerId} || true"
+            sh "docker network connect selenium_grid_network ${containerId} || true"
         } else {
             echo "⚠️ Could not determine container ID for manual network connection. Proceeding, but connection may be unstable."
         }
