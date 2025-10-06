@@ -9,11 +9,17 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
-        // Get the current container ID and connect it to the selenium_grid_network created by Docker Compose
-        def containerId = sh(script: 'hostname', returnStdout: true).trim()
-        // Wait a moment for Docker Compose to fully create the network
-        sleep time: 3, unit: 'SECONDS'
-        sh "docker network connect selenium_grid_network ${containerId} || true"
+        // Use the DOCKER_CONTAINER_ID environment variable provided by the Docker agent
+        def containerId = env.DOCKER_CONTAINER_ID ?: sh(script: 'hostname', returnStdout: true).trim()
+        
+        if (containerId) {
+            // Use 'docker network connect -f' to force reconnection, preventing the retry failure
+            // The sleep remains for the network to initialize
+            sleep time: 3, unit: 'SECONDS'
+            sh "docker network connect -f selenium_grid_network ${containerId} || true"
+        } else {
+            echo "⚠️ Could not determine container ID for manual network connection. Proceeding, but connection may be unstable."
+        }
 
         echo "🔍 Performing intelligent Grid health checks..."
         echo "⏳ Max wait time: ${maxWaitSeconds} seconds, Check interval: ${checkIntervalSeconds} seconds"
@@ -34,15 +40,15 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                     def statusResponse = sh(
                         script: "curl -s ${hubUrl}/status",
                         returnStdout: true
-                    )
+                    ).trim()  // Add .trim() to handle whitespace issues
 
                     if (statusResponse.contains('"ready":true')) {
                         gridReady = true
                         echo "✅ Selenium Grid is ready and accepting connections!"
                         break
-                    } else {
-                        echo "⏳ Grid Hub responding but not ready yet (status: ${statusResponse})"
                     }
+                    // Only log the full status if it responded but wasn't fully ready
+                    echo "⏳ Grid Hub responding but not fully ready. Status: ${statusResponse}"
                 } else {
                     echo "⏳ Grid Hub not responding yet (HTTP ${response})"
                 }
