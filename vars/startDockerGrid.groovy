@@ -1,4 +1,4 @@
-def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5, String hubUrl = 'http://localhost:4444/wd/hub') {
+def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5, String hubUrl = 'http://localhost:4444/wd/hub', String networkName = 'selenium_grid_network') {
     try {
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
@@ -6,7 +6,9 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                                 .replaceAll(/[^a-z0-9_-]/, '-') // replaces `/` and other disallowed characters
 
         echo "🚀 Starting Docker Grid using project name: ${projectName}"
-        sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
+        withEnv(["NETWORK_NAME=${networkName}"]) {
+            sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
+        }
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
         // Use the DOCKER_CONTAINER_ID environment variable provided by the Docker agent
@@ -16,7 +18,7 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
             // Connect to network (no flags needed - handle already connected with || true)
             // The sleep remains for the network to initialize
             sleep time: 3, unit: 'SECONDS'
-            sh "docker network connect selenium_grid_network ${containerId} || true"
+            sh "docker network connect ${networkName} ${containerId} || true"
         } else {
             echo "⚠️ Could not determine container ID for manual network connection. Proceeding, but connection may be unstable."
         }
