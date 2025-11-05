@@ -26,17 +26,13 @@ def call(Map config) {
         """
     }
 
-    // ✅ FIX: Run email on Jenkins master (not in Docker container)
-    // This ensures emailext has access to Jenkins system mailer configuration
-    node {
-        withCredentials([string(credentialsId: config.emailCredsId, variable: 'RECIPIENT_EMAILS')]) {
-            emailext(
-                subject: subject,
-                body: body,
-                to: RECIPIENT_EMAILS,
-                mimeType: 'text/html',
-                attachmentsPattern: "reports/**/index.html"
-            )
-        }
+    withCredentials([string(credentialsId: config.emailCredsId, variable: 'RECIPIENT_EMAILS')]) {
+        emailext(
+            subject: subject,
+            body: body,
+            to: RECIPIENT_EMAILS,
+            mimeType: 'text/html',
+            attachmentsPattern: "reports/**/index.html"
+        )
     }
 }
