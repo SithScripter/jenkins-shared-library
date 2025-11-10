@@ -1,13 +1,15 @@
 import groovy.xml.XmlUtil // Import sandbox-safe utility
 
 def call(Map config) {
-    if (!config?.suiteName) {
-        error "❌ suiteName is required in sendBuildSummaryEmail.groovy"
+    // --- POLISH 2: Add branchName to the required config ---
+    if (!config?.suiteName || !config?.branchName) {
+        error "❌ suiteName and branchName are required in sendBuildSummaryEmail.groovy"
     }
 
     // Defensive defaults for result
     def result = (currentBuild?.currentResult ?: currentBuild?.result ?: 'SUCCESS')
     def suiteName = config.suiteName
+    def branchName = config.branchName
     def summaryFile = "reports/${suiteName}-failure-summary.txt"
 
     // This URL matches your 'reportName: "Test Dashboard"'
@@ -51,25 +53,33 @@ def call(Map config) {
         </details>
     """
 
-    // Bind only the recipient list. SMTP settings now come from JCasC.
-    withCredentials([ string(credentialsId: config.emailCredsId, variable: 'RECIPIENT_EMAILS') ]) {
+    // --- POLISH 2: Branch-Aware Recipient Logic ---
+    // We get the list of "prod" branches from the 'getBranchConfig' library function
+    // This is excellent practice as the logic is defined in one place.
+    def branchConfig = getBranchConfig()
+    def emailCredsId = (branchName in branchConfig.productionCandidateBranches) 
+        ? 'recipient-email-list' 
+        : 'dev-recipient-email-list'
+
+    echo "Notifying '${emailCredsId}' for branch '${branchName}'"
+    
+    withCredentials([ string(credentialsId: emailCredsId, variable: 'RECIPIENT_EMAILS') ]) {
         
-        // --- RELIABILITY FIX 1: Guard Clause ---
+        // Guard Clause
         if (!RECIPIENT_EMAILS?.trim()) {
-            echo "⚠️ Email recipients list is empty. Skipping notification."
-            return // Stop execution if no one is set to receive the email
+            echo "⚠️ Email recipients list '${emailCredsId}' is empty. Skipping notification."
+            return
         }
 
         echo "Attempting to send email via emailext (using JCasC config)..."
         
-        // --- RELIABILITY FIX 2: Retry Wrapper ---
+        // Retry Wrapper
         retry(2) {
             emailext(
                 subject: subject,
                 body: body,
                 to: RECIPIENT_EMAILS,
                 mimeType: 'text/html'
-                // --- ATTACHMENTS REMOVED ---
             )
         }
     }
