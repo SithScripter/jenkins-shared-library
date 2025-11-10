@@ -1,4 +1,4 @@
-import groovy.xml.XmlUtil // <-- FIX 1: Import at the top
+import groovy.xml.XmlUtil // Import sandbox-safe utility
 
 def call(Map config) {
     if (!config?.suiteName) {
@@ -10,7 +10,7 @@ def call(Map config) {
     def suiteName = config.suiteName
     def summaryFile = "reports/${suiteName}-failure-summary.txt"
 
-    // ✅ This URL matches your 'reportName: "Test Dashboard"'
+    // This URL matches your 'reportName: "Test Dashboard"'
     def reportURL = "${env.BUILD_URL}Test_20Dashboard/"
 
     def failureSummary = fileExists(summaryFile)
@@ -49,19 +49,28 @@ def call(Map config) {
           <summary>Console tail (last ~200 lines)</summary>
           <pre style="background-color:#FAFAFA;border:1px solid #EEE;padding:10px;font-family:monospace;white-space:pre-wrap;">${XmlUtil.escapeXml(consoleTail)}</pre>
         </details>
-    """ // <-- FIX 2: Removed 'import' from this line
+    """
 
     // Bind only the recipient list. SMTP settings now come from JCasC.
     withCredentials([ string(credentialsId: config.emailCredsId, variable: 'RECIPIENT_EMAILS') ]) {
         
+        // --- RELIABILITY FIX 1: Guard Clause ---
+        if (!RECIPIENT_EMAILS?.trim()) {
+            echo "⚠️ Email recipients list is empty. Skipping notification."
+            return // Stop execution if no one is set to receive the email
+        }
+
         echo "Attempting to send email via emailext (using JCasC config)..."
         
-        emailext(
-            subject: subject,
-            body: body,
-            to: RECIPIENT_EMAILS,
-            mimeType: 'text/html',
-            attachmentsPattern: "reports/**/index.html"
-        )
+        // --- RELIABILITY FIX 2: Retry Wrapper ---
+        retry(2) {
+            emailext(
+                subject: subject,
+                body: body,
+                to: RECIPIENT_EMAILS,
+                mimeType: 'text/html'
+                // --- ATTACHMENTS REMOVED ---
+            )
+        }
     }
 }
