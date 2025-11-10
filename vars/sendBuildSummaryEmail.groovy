@@ -1,3 +1,5 @@
+import groovy.xml.XmlUtil // <-- FIX 1: Import at the top
+
 def call(Map config) {
     if (!config?.suiteName) {
         error "❌ suiteName is required in sendBuildSummaryEmail.groovy"
@@ -8,7 +10,7 @@ def call(Map config) {
     def suiteName = config.suiteName
     def summaryFile = "reports/${suiteName}-failure-summary.txt"
 
-    // ✅ FIX: This URL matches your 'reportName: "Test Dashboard"'
+    // ✅ This URL matches your 'reportName: "Test Dashboard"'
     def reportURL = "${env.BUILD_URL}Test_20Dashboard/"
 
     def failureSummary = fileExists(summaryFile)
@@ -45,9 +47,9 @@ def call(Map config) {
     def body = (result == 'SUCCESS') ? bodyTop : """${bodyTop}
         <details>
           <summary>Console tail (last ~200 lines)</summary>
-          <pre style="background-color:#FAFAFA;border:1px solid #EEE;padding:10px;font-family:monospace;white-space:pre-wrap;">${import groovy.xml.XmlUtil; XmlUtil.escapeXml(consoleTail)}</pre>
+          <pre style="background-color:#FAFAFA;border:1px solid #EEE;padding:10px;font-family:monospace;white-space:pre-wrap;">${XmlUtil.escapeXml(consoleTail)}</pre>
         </details>
-    """
+    """ // <-- FIX 2: Removed 'import' from this line
 
     // Bind only the recipient list. SMTP settings now come from JCasC.
     withCredentials([ string(credentialsId: config.emailCredsId, variable: 'RECIPIENT_EMAILS') ]) {
