@@ -45,7 +45,7 @@ def call(Map config) {
     def body = (result == 'SUCCESS') ? bodyTop : """${bodyTop}
         <details>
           <summary>Console tail (last ~200 lines)</summary>
-          <pre style="background-color:#FAFAFA;border:1px solid #EEE;padding:10px;font-family:monospace;white-space:pre-wrap;">${hudson.Functions.htmlEscape(consoleTail)}</pre>
+          <pre style="background-color:#FAFAFA;border:1px solid #EEE;padding:10px;font-family:monospace;white-space:pre-wrap;">${import groovy.xml.XmlUtil; XmlUtil.escapeXml(consoleTail)}</pre>
         </details>
     """
 
