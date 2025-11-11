@@ -6,6 +6,9 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
     }
 
     try {
+        // ✅ Checkout code first - required because Jenkinsfile has skipDefaultCheckout()
+        checkout scm
+        
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
                                 .toLowerCase()
