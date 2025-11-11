@@ -4,6 +4,7 @@
         }
 
         def suiteName = config.suiteName
+        def branchName = config.branchName ?: 'main'
         def summaryFile = "reports/${suiteName}-failure-summary.txt"
         def reportURL = "${env.BUILD_URL}Cumulative-Dashboard/"
 
@@ -26,7 +27,12 @@
             """
         }
 
-        withCredentials([string(credentialsId: 'jenkins-smtp-credentials', variable: 'RECIPIENT_EMAILS')]) {
+        // Use different credentials based on branch
+        def credentialId = branchName.startsWith('feature/') || branchName.startsWith('bugfix/') || branchName != 'main' 
+            ? 'dev-recipient-email-list' 
+            : 'recipient-email-list'
+
+        withCredentials([string(credentialsId: credentialId, variable: 'RECIPIENT_EMAILS')]) {
             emailext(
                 subject: subject,
                 body: body,
