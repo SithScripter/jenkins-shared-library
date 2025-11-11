@@ -1,12 +1,28 @@
-def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5, String hubUrl = 'http://localhost:4444/wd/hub', String networkName = 'selenium_grid_network') {
+def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 120, int checkIntervalSeconds = 5, String hubUrl = 'http://localhost:4444/wd/hub') {
+    // ✅ Read networkName from Jenkinsfile environment (dynamic per-branch)
+    def networkName = env.NETWORK_NAME
+    if (!networkName || networkName.trim().isEmpty()) {
+        error "❌ 'NETWORK_NAME' environment variable not set. Jenkinsfile must set this."
+    }
+
     try {
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
                                 .toLowerCase()
                                 .replaceAll(/[^a-z0-9_-]/, '-') // replaces `/` and other disallowed characters
 
+        // ✅ Self-Heal: Always try to tear down old containers/networks first.
+        // This cleans up any orphaned resources from a previously failed build.
+        echo "--- Attempting pre-build cleanup for project ${projectName} ---"
+        sh """
+            docker-compose -f ${composeFile} -p ${projectName} down --remove-orphans --volumes || true
+            docker network rm ${networkName} || true
+        """
+
         echo "🚀 Starting Docker Grid using project name: ${projectName}"
+        // ✅ Network creation moved here for proper sequencing
         withEnv(["NETWORK_NAME=${networkName}"]) {
+            sh "docker network create ${networkName} || true"
             sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
         }
 
