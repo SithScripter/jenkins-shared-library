@@ -17,13 +17,21 @@
                 <p>Build was successful.</p>
                 <p><b><a href='${reportURL}'>📄 View Test Dashboard</a></b></p>
             """
+        } else if (currentBuild.currentResult == 'UNSTABLE') {
+            subject = "⚠️ UNSTABLE: Build #${env.BUILD_NUMBER} for ${env.JOB_NAME}"
+            body = """
+                <p><b>WARNING: The build is unstable (some tests failed).</b></p>
+                <p><b>Failure Summary:</b></p>
+                <pre style="background-color:#F5F5F5; border:1px solid #E0E0E0; padding:10px; font-family:monospace;">${failureSummary}</pre>
+                <p><b><a href='${reportURL}'>📊 View Test Dashboard</a></b></p>
+            """
         } else {
             subject = "❌ FAILURE: Build #${env.BUILD_NUMBER} for ${env.JOB_NAME}"
             body = """
-                <p><b>WARNING: The build has failed.</b></p>
+                <p><b>CRITICAL: The build has failed.</b></p>
                 <p><b>Failure Summary:</b></p>
                 <pre style="background-color:#F5F5F5; border:1px solid #E0E0E0; padding:10px; font-family:monospace;">${failureSummary}</pre>
-                <p><b><a href='${reportURL}'>  View Test Dashboard</a></b></p>
+                <p><b><a href='${reportURL}'>📊 View Test Dashboard</a></b></p>
             """
         }
 
