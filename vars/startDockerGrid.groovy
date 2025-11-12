@@ -14,19 +14,33 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                                 .toLowerCase()
                                 .replaceAll(/[^a-z0-9_-]/, '-') // replaces `/` and other disallowed characters
 
+        echo "ℹ️ Detecting Docker Compose version..."
+
+        // Default to modern V2 (space)
+        def composeCmd = "docker compose"
+        def noPullFlag = "--no-pull"
+
+        // Check if V2 is available (redirect stderr to /dev/null to hide "command not found")
+        def v2Available = sh(script: "docker compose version >/dev/null 2>&1", returnStatus: true) == 0
+
+        if (!v2Available) {
+            echo "⚠️ Docker Compose V2 ('docker compose') not found. Falling back to V1 ('docker-compose')."
+            composeCmd = "docker-compose" // Fallback to legacy V1 (hyphen)
+            noPullFlag = ""               // V1 doesn't support --no-pull
+        } else {
+            echo "✅ Docker Compose V2 detected. Using '${composeCmd}' with --no-pull."
+        }
+
         // ✅ Self-Heal: Always try to tear down old containers/networks first.
-        // This cleans up any orphaned resources from a previously failed build.
         echo "--- Attempting pre-build cleanup for project ${projectName} ---"
-        sh """
-            docker-compose -f ${composeFile} -p ${projectName} down --remove-orphans --volumes || true
-            docker network rm ${networkName} || true
-        """
+        sh "${composeCmd} -f ${composeFile} -p ${projectName} down --remove-orphans --volumes || true"
+        sh "docker network rm ${networkName} || true"
 
         echo "🚀 Starting Docker Grid using project name: ${projectName}"
         // ✅ Network creation moved here for proper sequencing
         withEnv(["NETWORK_NAME=${networkName}"]) {
             sh "docker network create ${networkName} || true"
-            sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
+            sh "${composeCmd} -p ${projectName} -f ${composeFile} up -d ${noPullFlag}"
         }
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
@@ -61,7 +75,7 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                     def statusResponse = sh(
                         script: "curl -s ${hubUrl}/status",
                         returnStdout: true
-                    ).trim()  // Add .trim() to handle whitespace issues
+                    ).trim()  
 
                     // Parse JSON response to check readiness
                     def jsonResponse = readJSON text: statusResponse
@@ -92,7 +106,7 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         }
 
         echo "✅ Final Grid status:"
-        sh "docker-compose -p ${projectName} -f ${composeFile} ps"
+        sh "${composeCmd} -p ${projectName} -f ${composeFile} ps"
 
     } catch (e) {
         error "❌ Failed to start Docker Grid: ${e.getMessage()}"
