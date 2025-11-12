@@ -26,7 +26,7 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         // ✅ Network creation moved here for proper sequencing
         withEnv(["NETWORK_NAME=${networkName}"]) {
             sh "docker network create ${networkName} || true"
-            sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
+            sh "docker-compose -p ${projectName} -f ${composeFile} up -d --no-pull"
         }
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
