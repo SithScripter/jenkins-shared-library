@@ -6,41 +6,28 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
     }
 
     try {
-        // ✅ Checkout code first - required because Jenkinsfile has skipDefaultCheckout()
+        // ✅ Checkout code first
         checkout scm
         
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
                                 .toLowerCase()
-                                .replaceAll(/[^a-z0-9_-]/, '-') // replaces `/` and other disallowed characters
+                                .replaceAll(/[^a-z0-not;_-]/, '-') 
 
-        echo "ℹ️ Detecting Docker Compose version..."
-
-        // Default to modern V2 (space)
-        def composeCmd = "docker compose"
-        def noPullFlag = "--no-pull"
-
-        // Check if V2 is available (redirect stderr to /dev/null to hide "command not found")
-        def v2Available = sh(script: "docker compose version >/dev/null 2>&1", returnStatus: true) == 0
-
-        if (!v2Available) {
-            echo "⚠️ Docker Compose V2 ('docker compose') not found. Falling back to V1 ('docker-compose')."
-            composeCmd = "docker-compose" // Fallback to legacy V1 (hyphen)
-            noPullFlag = ""               // V1 doesn't support --no-pull
-        } else {
-            echo "✅ Docker Compose V2 detected. Using '${composeCmd}' with --no-pull."
-        }
+        // ❌ REMOVED all the V2 detection logic ❌
 
         // ✅ Self-Heal: Always try to tear down old containers/networks first.
         echo "--- Attempting pre-build cleanup for project ${projectName} ---"
-        sh "${composeCmd} -f ${composeFile} -p ${projectName} down --remove-orphans --volumes || true"
+        // ✅ Reverted to stable V1 commands
+        sh "docker-compose -f ${composeFile} -p ${projectName} down --remove-orphans --volumes || true"
         sh "docker network rm ${networkName} || true"
 
         echo "🚀 Starting Docker Grid using project name: ${projectName}"
         // ✅ Network creation moved here for proper sequencing
         withEnv(["NETWORK_NAME=${networkName}"]) {
             sh "docker network create ${networkName} || true"
-            sh "${composeCmd} -p ${projectName} -f ${composeFile} up -d ${noPullFlag}"
+            // ✅ Reverted to stable V1 command (no --no-pull)
+            sh "docker-compose -p ${projectName} -f ${composeFile} up -d"
         }
 
         echo "🔗 Connecting Jenkins agent to Grid network for health checks..."
@@ -48,8 +35,6 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         def containerId = env.DOCKER_CONTAINER_ID ?: sh(script: 'hostname', returnStdout: true).trim()
         
         if (containerId) {
-            // Connect to network (no flags needed - handle already connected with || true)
-            // The sleep remains for the network to initialize
             sleep time: 3, unit: 'SECONDS'
             sh "docker network connect ${networkName} ${containerId} || true"
         } else {
@@ -84,7 +69,6 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
                         echo "✅ Selenium Grid is ready and accepting connections!"
                         break
                     }
-                    // Only log the full status if it responded but wasn't fully ready
                     echo "⏳ Grid Hub responding but not fully ready. Status: ${statusResponse}"
                 } else {
                     echo "⏳ Grid Hub not responding yet (HTTP ${response})"
@@ -106,7 +90,8 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         }
 
         echo "✅ Final Grid status:"
-        sh "${composeCmd} -p ${projectName} -f ${composeFile} ps"
+        // ✅ Reverted to stable V1 command
+        sh "docker-compose -p ${projectName} -f ${composeFile} ps"
 
     } catch (e) {
         error "❌ Failed to start Docker Grid: ${e.getMessage()}"
