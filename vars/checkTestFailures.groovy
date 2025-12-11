@@ -7,9 +7,9 @@ def call() {
             def content = readFile(file: file.path)
             // Simple regex parsing - assumes well-formed XML
             // For complex cases, could use XmlSlurper, but regex works for our standardized surefire reports
-            failures += (content =~ /<failure>/).count()
-            errors += (content =~ /<error>/).count()
-            total += (content =~ /<testcase/).count()
+            failures += (content =~ /<failure>/).findAll().size()
+            errors += (content =~ /<error>/).findAll().size()
+            total += (content =~ /<testcase/).findAll().size()
         }
 
         return [total: total, failures: failures, errors: errors]
