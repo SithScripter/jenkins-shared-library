@@ -5,11 +5,23 @@ def call() {
 
         files.each { file ->
             def content = readFile(file: file.path)
-            // Simple regex parsing - assumes well-formed XML
-            // For complex cases, could use XmlSlurper, but regex works for our standardized surefire reports
-            failures += (content =~ /<failure>/).findAll().size()
-            errors += (content =~ /<error>/).findAll().size()
-            total += (content =~ /<testcase/).findAll().size()
+            // Simple regex parsing - supports both JUnit (surefire) and TestNG XML formats
+            // For complex cases, could use XmlSlurper, but regex works for our standardized reports
+
+            // Count failures: JUnit <failure> or TestNG status="FAIL"
+            def failureCount = (content =~ /<failure>/).findAll().size()
+            failureCount += (content =~ /status="FAIL"/).findAll().size()
+            failures += failureCount
+
+            // Count errors: JUnit <error> or TestNG exceptions
+            def errorCount = (content =~ /<error>/).findAll().size()
+            errorCount += (content =~ /<exception/).findAll().size()  // No 'def' here
+            errors += errorCount
+
+            // Count total tests: JUnit <testcase> or TestNG <test-method>
+            def testCount = (content =~ /<testcase/).findAll().size()
+            testCount += (content =~ /<test-method/).findAll().size()  // No 'def' here
+            total += testCount
         }
 
         return [total: total, failures: failures, errors: errors]
