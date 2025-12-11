@@ -1,46 +1,20 @@
 def call() {
-    echo "🔍 Debug: Starting test failure check..."
-
     try {
-        // Individual try-catch for each command
-        def failureCount = 0
+        def files = findFiles(glob: '**/surefire-reports/*.xml')
+        def total = 0, failures = 0, errors = 0
 
-        // Count <failure> elements
-        try {
-            def failureCmd = sh(script: 'find target/surefire-reports -name "*.xml" -exec grep -c "<failure>" {} \\; 2>/dev/null || true', returnStdout: true).trim()
-            if (failureCmd) {
-                failureCount += failureCmd.split('\n').collect { it.toInteger() }.sum()
-            }
-        } catch (Exception e) {
-            echo "⚠️ Debug: Could not count failure elements: ${e.getMessage()}"
+        files.each { file ->
+            def content = readFile(file: file.path)
+            // Simple regex parsing - assumes well-formed XML
+            // For complex cases, could use XmlSlurper, but regex works for our standardized surefire reports
+            failures += (content =~ /<failure>/).count()
+            errors += (content =~ /<error>/).count()
+            total += (content =~ /<testcase/).count()
         }
 
-        // Count <error> elements
-        try {
-            def errorCmd = sh(script: 'find target/surefire-reports -name "*.xml" -exec grep -c "<error>" {} \\; 2>/dev/null || true', returnStdout: true).trim()
-            if (errorCmd) {
-                failureCount += errorCmd.split('\n').collect { it.toInteger() }.sum()
-            }
-        } catch (Exception e) {
-            echo "⚠️ Debug: Could not count error elements: ${e.getMessage()}"
-        }
-
-        // Count failed test methods
-        try {
-            def failCmd = sh(script: 'find target/surefire-reports -name "*.xml" -exec grep -c "status=\\"FAIL\\"" {} \\; 2>/dev/null || true', returnStdout: true).trim()
-            if (failCmd) {
-                failureCount += failCmd.split('\n').collect { it.toInteger() }.sum()
-            }
-        } catch (Exception e) {
-            echo "⚠️ Debug: Could not count failed methods: ${e.getMessage()}"
-        }
-
-        echo "🔍 Debug: Total failures detected: ${failureCount}"
-
-        return failureCount
-
+        return [total: total, failures: failures, errors: errors]
     } catch (Exception e) {
-        echo "⚠️ Warning: Could not parse test results: ${e.getMessage()}"
-        return 0
+        echo "⚠️ Quality Gate: Could not parse test results: ${e.message}"
+        return [total: 0, failures: 0, errors: 0]
     }
 }
