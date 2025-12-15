@@ -6,6 +6,6 @@ def call() {
         reportName: 'Test Dashboard',
         reportDir: 'reports',
         reportFiles: 'index.html',
-        keepAll: true, alwaysLinkToLastBuild: true, allowMissing: false
+        keepAll: false, alwaysLinkToLastBuild: true, allowMissing: false
     ])
 }
