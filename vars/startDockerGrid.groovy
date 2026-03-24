@@ -12,7 +12,7 @@ def call(String composeFile = 'docker-compose-grid.yml', int maxWaitSeconds = 12
         // Sanitize JOB_NAME for Docker Compose project name
         def projectName = env.JOB_NAME
                                 .toLowerCase()
-                                .replaceAll(/[^a-z0-not;_-]/, '-') 
+								.replaceAll(/[^a-z0-9_.-]/, '-')
 
         // ❌ REMOVED all the V2 detection logic ❌
 

@@ -36,9 +36,9 @@
         }
 
         // Use different credentials based on branch
-        def credentialId = branchName.startsWith('feature/') || branchName.startsWith('bugfix/') || branchName != 'main' 
-            ? 'dev-recipient-email-list' 
-            : 'recipient-email-list'
+        def credentialId = (branchName in ['main', 'enhancements'])
+            ? 'recipient-email-list' 
+            : 'dev-recipient-email-list'
 
         withCredentials([string(credentialsId: credentialId, variable: 'RECIPIENT_EMAILS')]) {
             emailext(

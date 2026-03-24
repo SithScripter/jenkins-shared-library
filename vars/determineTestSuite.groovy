@@ -9,7 +9,6 @@ def call() {
     def suiteToRun = isTimerTrigger ? 'regression' : (params.SUITE_NAME ?: 'smoke')
     
     echo "✅ Pipeline will run the '${suiteToRun}' suite."
-    echo "DEBUG: params.SUITE_NAME='${params.SUITE_NAME}', suiteToRun='${suiteToRun}'"
     
     return suiteToRun
 }
