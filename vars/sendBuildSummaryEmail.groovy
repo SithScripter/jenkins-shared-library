@@ -6,7 +6,7 @@
         def suiteName = config.suiteName
         def branchName = config.branchName ?: 'main'
         def summaryFile = "reports/${suiteName}-failure-summary.txt"
-        def reportURL = "${env.BUILD_URL}Test_20Dashboard/"
+        def reportURL = "${env.BUILD_URL}Test_20Dashboard/".replace('%252F', '%2F')
 
         def failureSummary = fileExists(summaryFile) ? readFile(summaryFile).trim() : "⚠️ No failure summary available. Possible report generation issue."
 

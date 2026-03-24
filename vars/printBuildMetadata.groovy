@@ -6,6 +6,7 @@ def call(String suiteName = '') {
     if (suiteName) {
         echo "Suite: ${suiteName}"
     }
-    echo "Triggered by: ${env.BUILD_USER ?: 'Unknown'}"
+    def causes = currentBuild.getBuildCauses()*.shortDescription.join(', ')
+	echo "Triggered by: ${causes ?: 'Unknown'}"
     echo "================================================="
 }
