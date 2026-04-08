@@ -10,7 +10,11 @@ def call() {
         developmentBranches: ['enhancements'],
 
         // ✅ Experimental branches (future feature branches + improvements)
-        experimentalBranches: ['feature/*', 'bugfix/*', 'improvements']
+        experimentalBranches: ['feature/*', 'bugfix/*', 'improvements'],
+
+        // ✅ AI analysis branches — only production-candidate branches
+        // Feature branches skip AI analysis to save build time (2-5 min LLM latency)
+        aiAnalysisBranches: ['main', 'enhancements']
     ]
 
     // ✅ Compute branches that get full pipeline (active + experimental matches)
