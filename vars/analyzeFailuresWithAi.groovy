@@ -56,11 +56,13 @@ def call(Map config = [:]) {
 
         // Step 3: Run AiFailureAnalyzer via Maven exec
         // Uses test classpath since AiFailureAnalyzer is in src/test/java
+		// UPDATED — added -Dai.ollama.baseUrl override for CI:
         def exitCode = sh(
             script: '''
                 mvn exec:java \
                     -Dexec.mainClass="com.demo.flightbooking.utils.FailureAnalysisDemo" \
                     -Dexec.classpathScope=test \
+                    -Dai.ollama.baseUrl=http://host.docker.internal:11434 \
                     -q \
                     2>&1 || true
             ''',
