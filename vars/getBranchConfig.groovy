@@ -14,7 +14,7 @@ def call() {
 
         // ✅ AI analysis branches — only production-candidate branches
         // Feature branches skip AI analysis to save build time (2-5 min LLM latency)
-        aiAnalysisBranches: ['main', 'enhancements', 'feature/phase3-ai-augmentation']
+        aiAnalysisBranches: ['main', 'enhancements']
     ]
 
     // ✅ Compute branches that get full pipeline (active + experimental matches)
