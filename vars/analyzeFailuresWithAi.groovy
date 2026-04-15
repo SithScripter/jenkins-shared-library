@@ -1,7 +1,7 @@
 /**
- * Shared library function: AI-powered failure analysis (Phase 5)
+ * Shared library function: AI-powered failure analysis
  *
- * Runs AiFailureAnalyzer (Phase 4) inside the CI pipeline.
+ * Runs AiFailureAnalyzer inside the CI pipeline.
  * Generates a markdown analysis report and archives it as a build artifact.
  *
  * ARCHITECTURE POSITION:
@@ -60,7 +60,7 @@ def call(Map config = [:]) {
         def exitCode = sh(
             script: '''
                 mvn exec:java \
-                    -Dexec.mainClass="com.demo.flightbooking.utils.FailureAnalysisDemo" \
+                    -Dexec.mainClass="com.demo.flightbooking.ai.FailureAnalysisRunner" \
                     -Dexec.classpathScope=test \
                     -Dai.ollama.baseUrl=http://host.docker.internal:11434 \
                     -q \
